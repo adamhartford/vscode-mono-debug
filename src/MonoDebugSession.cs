@@ -187,7 +187,7 @@ namespace VSCodeDebug
 
 			SetExceptionBreakpoints(args.__exceptionOptions);
 
-			bool isXsp = getBool(args, "useXspServer", false);
+			bool isXsp = getBool(args, "xsp", false);
 
 			string programPath = getString(args, "program");
 			if (!isXsp) {

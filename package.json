@@ -135,6 +135,18 @@
 					"externalConsole": false
 				},
 				{
+					"name": "%mono.xsp.config.name%",
+					"type": "mono",
+					"request": "launch",
+					"args": [],
+					"cwd": "${workspaceRoot}",
+					"preLaunchTask": "",
+					"runtimeExecutable": null,
+					"env": { },
+					"externalConsole": false,
+					"useXspServer": true
+				},
+				{
 					"name": "%mono.attach.config.name%",
 					"type": "mono",
 					"request": "attach",
@@ -144,7 +156,7 @@
 			],
 			"configurationAttributes": {
 				"launch": {
-					"required": ["program"],
+					"required": [],
 					"properties": {
 						"program": {
 							"type": "string",
@@ -192,6 +204,11 @@
 							],
 							"description": "%mono.launch.console.description%",
 							"default": "internalConsole"
+						},
+						"useXspServer": {
+							"type": "boolean",
+							"description": "%mono.launch.useXspServer.description%",
+							"default": false
 						}
 					}
 				},

@@ -1,4 +1,4 @@
-﻿/*---------------------------------------------------------------------------------------------
+﻿﻿﻿/*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
@@ -16,6 +16,7 @@ namespace VSCodeDebug
 	public class MonoDebugSession : DebugSession
 	{
 		private const string MONO = "mono";
+		private const string XSP4 = "xsp4";
 		private readonly string[] MONO_EXTENSIONS = new String[] {
 			".cs", ".csx",
 			".fs", ".fsi", ".ml", ".mli", ".fsx", ".fsscript"
@@ -186,16 +187,20 @@ namespace VSCodeDebug
 
 			SetExceptionBreakpoints(args.__exceptionOptions);
 
-			// validate argument 'program'
+			bool isXsp = getBool(args, "useXspServer", false);
+
 			string programPath = getString(args, "program");
-			if (programPath == null) {
-				SendErrorResponse(response, 3001, "Property 'program' is missing or empty.", null);
-				return;
-			}
-			programPath = ConvertClientPathToDebugger(programPath);
-			if (!File.Exists(programPath) && !Directory.Exists(programPath)) {
-				SendErrorResponse(response, 3002, "Program '{path}' does not exist.", new { path = programPath });
-				return;
+			if (!isXsp) {
+				// validate argument 'program'
+				if (programPath == null) {
+					SendErrorResponse(response, 3001, "Property 'program' is missing or empty.", null);
+					return;
+				}
+				programPath = ConvertClientPathToDebugger(programPath);
+				if (!File.Exists(programPath) && !Directory.Exists(programPath)) {
+					SendErrorResponse(response, 3002, "Program '{path}' does not exist.", new { path = programPath });
+					return;
+				}
 			}
 
 			// validate argument 'cwd'
@@ -251,7 +256,7 @@ namespace VSCodeDebug
 					SendErrorResponse(response, 3011, "Can't find runtime '{_runtime}' on PATH.", new { _runtime = MONO });
 					return;
 				}
-				mono_path = MONO;     // try to find mono through PATH
+				mono_path = isXsp ? XSP4 : MONO;     // try to find mono/xsp4 through PATH
 			}
 
 
@@ -259,8 +264,12 @@ namespace VSCodeDebug
 
 			bool debug = !getBool(args, "noDebug", false);
 			if (debug) {
-				cmdLine.Add("--debug");
-				cmdLine.Add(String.Format("--debugger-agent=transport=dt_socket,server=y,address={0}:{1}", host, port));
+				if (!isXsp) {
+					cmdLine.Add("--debug");
+					cmdLine.Add(String.Format("--debugger-agent=transport=dt_socket,server=y,address={0}:{1}", host, port));
+				} else {
+					System.Environment.SetEnvironmentVariable("MONO_OPTIONS", String.Format("--debug --debugger-agent=transport=dt_socket,server=y,suspend=n,address={0}:{1}", host, port));
+				}
 			}
 
 			// add 'runtimeArgs'
@@ -277,7 +286,7 @@ namespace VSCodeDebug
 				workingDirectory = Path.GetDirectoryName(programPath);
 				cmdLine.Add(Path.GetFileName(programPath));
 			}
-			else {
+			else if (!isXsp) {
 				// if working dir is given and if the executable is within that folder, we make the program path relative to the working dir
 				cmdLine.Add(Utilities.MakeRelativePath(workingDirectory, programPath));
 			}
